@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Barcode Inventaris</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    <script src="html5-qrcode.min.js"></script> 
+</head>
+<body>
+    <div class="container">
+        <h1>Scan Barcode / QR Code</h1>
+
+        <div class="action-buttons-top">
+            <a href="index.html" class="modern-button">Kembali ke Inventaris</a>
+        </div>
+
+        <div class="scan-section">
+            <p>Arahkan kamera ke Barcode / QR Code, atau unggah gambar.</p>
+            <div id="reader" style="width: 100%;"></div>
+
+            <div class="upload-section">
+                <label for="qr-file-input">Pilih Gambar Barcode / QR</label>
+                <input type="file" id="qr-file-input" accept="image/*">
+            </div>
+
+            <div id="qr-reader-results" class="scan-result-section">
+                <h3>Hasil Scan</h3>
+                <div id="scanned-item-info">
+                    <p>Belum ada barcode yang terdeteksi.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scan-script.js"></script>
+</body>
+</html>
