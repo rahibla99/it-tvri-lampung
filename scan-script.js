@@ -1,14 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Debugging: Cek apakah auth.js sudah di-load ---
+    if (typeof getLoggedInUser === 'undefined') {
+        console.error("Error: auth.js not loaded or getLoggedInUser is not defined.");
+        // Mungkin tampilkan pesan error di UI jika perlu
+        return; // Hentikan eksekusi script jika auth.js belum ada
+    }
+    const currentUser = getLoggedInUser();
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    const currentUserRole = currentUser.role; // Ambil role user
+
     const scannedItemInfoDiv = document.getElementById('scanned-item-info');
     const qrCodeFileInput = document.getElementById('qr-file-input');
+    const startScanBtn = document.getElementById('startScanBtn');
+    const scannerContainer = document.getElementById('scannerContainer');
+    const readerDiv = document.getElementById('reader');
+
+    // --- Debugging: Pastikan semua elemen ditemukan ---
+    if (!scannedItemInfoDiv) console.error("scannedItemInfoDiv not found!");
+    if (!qrCodeFileInput) console.error("qrCodeFileInput not found!");
+    if (!startScanBtn) console.error("startScanBtn not found!");
+    if (!scannerContainer) console.error("scannerContainer not found!");
+    if (!readerDiv) console.error("readerDiv not found!");
 
     let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
 
     // Inisialisasi Html5QrcodeScanner
-    // Pastikan ID "reader" ada di scan.html
-    const html5QrCode = new Html5Qrcode("reader");
+    // PENTING: Inisialisasi hanya jika readerDiv ditemukan
+    let html5QrCode;
+    if (readerDiv) {
+        html5QrCode = new Html5Qrcode("reader");
+        console.log("Html5Qrcode initialized.");
+    } else {
+        console.error("Html5Qrcode cannot be initialized: 'reader' div not found.");
+    }
 
-    // Konfigurasi scanner
     const qrCodeConfig = {
         fps: 10, // Frames per second
         qrbox: { width: 250, height: 250 }, // Ukuran area scan
@@ -17,136 +45,161 @@ document.addEventListener('DOMContentLoaded', () => {
         disableFlip: false // Penting: Izinkan flip untuk QR code yang mungkin terbalik
     };
 
-    // Fungsi untuk menampilkan info barang yang discan
     const displayScannedItem = (decodedText) => {
-        // Kita asumsikan format QR adalah "Nama: [Nama Barang]\nJumlah: [Jumlah]\nDeskripsi: [Deskripsi]"
-        // Ini harus konsisten dengan format data yang digenerate di script.js
+        // Kita asumsikan format QR adalah "Nama: [Nama Barang]\nJenis: [Jenis]\nTipe: [Tipe]\nJumlah: [Jumlah]\nKelengkapan: [Kelengkapan]\nKondisi: [Kondisi]\nDeskripsi: [Deskripsi]"
         const lines = decodedText.split('\n');
         let scannedName = '';
-        if (lines[0] && lines[0].startsWith('Nama: ')) {
-            scannedName = lines[0].replace('Nama: ', '').trim();
-        } else {
-            // Fallback jika format tidak sesuai ekspektasi (misal cuma nama saja)
-            scannedName = decodedText.trim();
+        let scannedJenis = '';
+        let scannedTipe = '';
+
+        lines.forEach(line => {
+            if (line.startsWith('Nama: ')) {
+                scannedName = line.replace('Nama: ', '').trim();
+            } else if (line.startsWith('Jenis: ')) {
+                scannedJenis = line.replace('Jenis: ', '').trim();
+            } else if (line.startsWith('Tipe: ')) {
+                scannedTipe = line.replace('Tipe: ', '').trim();
+            }
+        });
+        
+        // Fallback jika format tidak sesuai ekspektasi (misal cuma nama saja tanpa detail lain)
+        if (!scannedName && lines.length > 0) {
+            scannedName = lines[0].trim();
         }
 
-        // Penting: Pastikan pencarian case-insensitive dan trim spasi
-        const foundItem = inventory.find(item => item.name.toLowerCase() === scannedName.toLowerCase());
+        // Mencari item berdasarkan Nama, Jenis, dan Tipe untuk kecocokan yang lebih baik
+        const foundItem = inventory.find(item => 
+            item.name.toLowerCase() === scannedName.toLowerCase() &&
+            item.jenis.toLowerCase() === scannedJenis.toLowerCase() &&
+            item.tipe.toLowerCase() === scannedTipe.toLowerCase()
+        );
 
         scannedItemInfoDiv.innerHTML = ''; // Kosongkan hasil sebelumnya
 
         if (foundItem) {
             const itemHtml = `
                 <div class="scan-result-item">
+                    <p><strong>Jenis Barang:</strong> ${foundItem.jenis}</p>
                     <p><strong>Nama Barang:</strong> ${foundItem.name}</p>
+                    <p><strong>Tipe:</strong> ${foundItem.tipe}</p>
                     <p><strong>Jumlah:</strong> ${foundItem.quantity}</p>
+                    <p><strong>Kelengkapan:</strong> ${foundItem.kelengkapan || '-'}</p>
+                    <p><strong>Kondisi:</strong> ${foundItem.kondisi || '-'}</p>
                     <p><strong>Deskripsi:</strong> ${foundItem.description || '-'}</p>
                 </div>
             `;
             scannedItemInfoDiv.innerHTML = itemHtml;
         } else {
             scannedItemInfoDiv.innerHTML = `
-                <p>Barang dengan barcode/QR code: <strong>"${scannedName || decodedText}"</strong> tidak ditemukan di inventaris.</p>
+                <p>Barang dengan barcode/QR code: <strong>"${scannedName || decodedText.substring(0, 50) + (decodedText.length > 50 ? '...' : '')}"</strong> tidak ditemukan di inventaris.</p>
                 <p>Data yang dipindai: <br><code>${decodedText}</code></p>
             `;
         }
     };
 
-    // Fungsi callback saat barcode berhasil discan (baik dari kamera maupun gambar)
     const onScanSuccess = (decodedText, decodedResult) => {
         console.log(`Scan result: ${decodedText}`, decodedResult);
-        // Hentikan scanner jika sedang berjalan (misal setelah live scan)
-        if (html5QrCode.isScanning) {
+        if (html5QrCode && html5QrCode.isScanning) { // Tambah pengecekan html5QrCode
             html5QrCode.stop().then(() => {
                 console.log("QR Code scanning stopped.");
                 displayScannedItem(decodedText);
             }).catch((err) => {
                 console.error("Failed to stop QR Code scanning:", err);
-                displayScannedItem(decodedText); // Tetap tampilkan hasil meski stop gagal
+                displayScannedItem(decodedText);
             });
         } else {
-            // Jika scan dari file, scanner mungkin sudah berhenti atau belum mulai
             displayScannedItem(decodedText);
         }
     };
 
-    // Fungsi callback saat ada error scan dari kamera
     const onScanError = (errorMessage) => {
         // console.warn(`QR Code scan error: ${errorMessage}`);
-        // Error dari live scan tidak perlu selalu ditampilkan ke UI agar tidak mengganggu
     };
 
-    // Fungsi untuk memulai scanner kamera
-    const startScanner = () => {
-        // Hanya mulai jika belum scanning
-        if (!html5QrCode.isScanning) {
+    const startCameraScanner = () => { // Rename untuk kejelasan
+        if (html5QrCode && !html5QrCode.isScanning) { // Tambah pengecekan html5QrCode
             html5QrCode.start(
-                { facingMode: "environment" }, // Gunakan kamera belakang untuk scan fisik
+                { facingMode: "environment" },
                 qrCodeConfig,
                 onScanSuccess,
                 onScanError
             ).catch(err => {
                 console.error("Gagal memulai scanner kamera:", err);
                 scannedItemInfoDiv.innerHTML = '<p style="color: red;">Gagal mengakses kamera. Pastikan Anda mengizinkan akses kamera dan tidak ada aplikasi lain yang menggunakannya.</p>';
+                // Sembunyikan scanner container jika gagal memulai kamera
+                scannerContainer.style.display = 'none'; 
+                startScanBtn.style.display = 'block'; // Tampilkan lagi tombol Mulai Scan
             });
+        } else if (!html5QrCode) {
+             console.error("Scanner not initialized. Cannot start camera.");
         }
     };
 
-    // Mulai scanner saat halaman dimuat
-    startScanner();
+    // Event listener untuk tombol "Mulai Scan"
+    if (startScanBtn && scannerContainer) { // PENTING: Tambahkan pengecekan ini
+        startScanBtn.addEventListener('click', () => {
+            console.log("Mulai Scan button clicked.");
+            scannerContainer.style.display = 'block'; 
+            startScanBtn.style.display = 'none'; 
+            startCameraScanner(); 
+        });
+    } else {
+        console.error("Start Scan button or Scanner Container not found.");
+    }
 
     // Event listener untuk input file (scan dari gambar)
-    qrCodeFileInput.addEventListener('change', (e) => {
-        if (e.target.files.length === 0) {
-            return;
-        }
-        const imageFile = e.target.files[0];
-        
-        // Hentikan scanner kamera sementara jika sedang berjalan sebelum scan file
-        if (html5QrCode.isScanning) {
-            html5QrCode.stop().then(() => {
-                console.log("Camera stopped for image scan.");
-                html5QrCode.scanFile(imageFile, true) // scanFile(file, showImage)
+    if (qrCodeFileInput) { // PENTING: Tambahkan pengecekan ini
+        qrCodeFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length === 0) {
+                return;
+            }
+            const imageFile = e.target.files[0];
+            
+            if (html5QrCode && html5QrCode.isScanning) { // Tambah pengecekan html5QrCode
+                html5QrCode.stop().then(() => {
+                    console.log("Camera stopped for image scan.");
+                    html5QrCode.scanFile(imageFile, true)
+                        .then(decodedText => {
+                            onScanSuccess(decodedText, {});
+                        })
+                        .catch(err => {
+                            console.error(`Error scanning file: ${err}`);
+                            scannedItemInfoDiv.innerHTML = `<p style="color: red;">Gagal memindai gambar barcode: ${err}</p>`;
+                        })
+                        .finally(() => {
+                            startCameraScanner(); 
+                        });
+                }).catch(err => {
+                    console.error("Failed to stop camera before image scan:", err);
+                    html5QrCode.scanFile(imageFile, true)
+                        .then(decodedText => { onScanSuccess(decodedText, {}); })
+                        .catch(err => {
+                            console.error(`Error scanning file (fallback): ${err}`);
+                            scannedItemInfoDiv.innerHTML = `<p style="color: red;">Gagal memindai gambar barcode: ${err}</p>`;
+                        })
+                        .finally(() => { startCameraScanner(); });
+                });
+            } else if (html5QrCode) { // Hanya coba scan file jika html5QrCode terinisialisasi
+                html5QrCode.scanFile(imageFile, true)
                     .then(decodedText => {
-                        onScanSuccess(decodedText, {}); // Panggil success handler
+                        onScanSuccess(decodedText, {});
                     })
                     .catch(err => {
                         console.error(`Error scanning file: ${err}`);
                         scannedItemInfoDiv.innerHTML = `<p style="color: red;">Gagal memindai gambar barcode: ${err}</p>`;
-                    })
-                    .finally(() => {
-                        // Setelah scan file selesai, restart kamera
-                        startScanner();
                     });
-            }).catch(err => {
-                console.error("Failed to stop camera before image scan:", err);
-                // Jika gagal stop, coba tetap scan file
-                html5QrCode.scanFile(imageFile, true)
-                    .then(decodedText => { onScanSuccess(decodedText, {}); })
-                    .catch(err => {
-                        console.error(`Error scanning file (fallback): ${err}`);
-                        scannedItemInfoDiv.innerHTML = `<p style="color: red;">Gagal memindai gambar barcode: ${err}</p>`;
-                    })
-                    .finally(() => { startScanner(); });
-            });
-        } else {
-            // Jika kamera tidak berjalan, langsung scan file
-            html5QrCode.scanFile(imageFile, true)
-                .then(decodedText => {
-                    onScanSuccess(decodedText, {});
-                })
-                .catch(err => {
-                    console.error(`Error scanning file: ${err}`);
-                    scannedItemInfoDiv.innerHTML = `<p style="color: red;">Gagal memindai gambar barcode: ${err}</p>`;
-                });
-        }
-        // Reset input file agar bisa memilih file yang sama lagi jika perlu
-        e.target.value = ''; 
-    });
+            } else {
+                console.error("Scanner not initialized. Cannot scan file.");
+            }
+            e.target.value = ''; 
+        });
+    } else {
+        console.error("QR Code File Input not found.");
+    }
 
     // Pastikan scanner berhenti saat halaman ditutup atau ditinggalkan
     window.addEventListener('beforeunload', () => {
-        if (html5QrCode.isScanning) {
+        if (html5QrCode && html5QrCode.isScanning) { // Tambah pengecekan html5QrCode
             html5QrCode.stop().catch(err => console.warn("Failed to stop scanner on page unload:", err));
         }
     });

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Pengguna - Inventaris Kantor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="auth.js"></script> <script>
+        // Cek status login dan role. Hanya admin yang boleh akses.
+        const currentUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        if (!currentUser || currentUser.role !== 'admin') {
+            alert('Akses ditolak! Anda harus login sebagai Admin.');
+            window.location.href = 'login.html'; // Redirect jika bukan admin
+        }
+    </script>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-content container">
+            <a href="dashboard.html" class="app-title-link">
+                <div class="app-title">Inventaris TVRI Lampung</div>
+            </a>
+            <nav class="main-nav">
+                <a href="inventory_list.html" class="nav-item">List Inventaris</a>
+                <a href="scan.html" class="nav-item">Scan QR</a>
+                <a href="manage_users.html" class="nav-item active" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
+            </nav>
+            <div class="user-profile">
+                <div class="profile-icon" id="profileIcon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-item" id="loggedInUsername"></div>
+                    <a href="profile.html" class="dropdown-item">Pengaturan Akun</a>
+                    <a href="#" class="dropdown-item" onclick="logout()">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Manajemen Pengguna</h1>
+
+        <div class="user-list-section">
+            <h2>Daftar Pengguna</h2>
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="editUserModal" class="qr-modal"> <div class="qr-modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Edit Pengguna</h2>
+            <form id="editUserForm" class="auth-form">
+                <div class="form-group">
+                    <label for="editUsername">Username</label>
+                    <input type="text" id="editUsername" readonly> </div>
+                <div class="form-group">
+                    <label for="editRole">Role</label>
+                    <select id="editRole">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="modern-button auth-button">Simpan Perubahan</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const usersTableBody = document.querySelector('#usersTable tbody');
+            const editUserModal = document.getElementById('editUserModal');
+            const editUserForm = document.getElementById('editUserForm');
+            const editUsernameInput = document.getElementById('editUsername');
+            const editRoleSelect = document.getElementById('editRole');
+            const closeModalButton = editUserModal.querySelector('.close-button');
+
+            let currentEditingUserIndex = -1; // Untuk menyimpan index user yang sedang diedit
+
+            const renderUsers = () => {
+                usersTableBody.innerHTML = '';
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+
+                users.forEach((user, index) => {
+                    const row = usersTableBody.insertRow();
+                    row.insertCell().textContent = user.username;
+                    row.insertCell().textContent = user.role;
+
+                    const actionCell = row.insertCell();
+                    actionCell.classList.add('action-buttons'); // Gunakan class yang sudah ada
+
+                    // Tombol Edit
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = 'Edit';
+                    editBtn.classList.add('update-btn');
+                    editBtn.onclick = () => {
+                        currentEditingUserIndex = index;
+                        editUsernameInput.value = user.username;
+                        editRoleSelect.value = user.role;
+                        editUserModal.style.display = 'flex'; // Tampilkan modal
+                        editUserModal.classList.add('active'); // Tambah class active untuk animasi
+                    };
+                    actionCell.appendChild(editBtn);
+
+                    // Tombol Hapus (Jangan biarkan admin menghapus dirinya sendiri atau admin lain tanpa konfirmasi)
+                    const currentUser = getLoggedInUser(); // Ambil user yang sedang login
+                    if (user.username !== 'admin' && user.username !== currentUser.username) { // Admin default & admin yang login tidak bisa dihapus lewat sini
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Hapus';
+                        deleteBtn.classList.add('delete-btn');
+                        deleteBtn.onclick = () => {
+                            if (confirm(`Yakin ingin menghapus pengguna ${user.username}?`)) {
+                                users.splice(index, 1);
+                                localStorage.setItem('users', JSON.stringify(users));
+                                renderUsers(); // Render ulang tabel
+                            }
+                        };
+                        actionCell.appendChild(deleteBtn);
+                    }
+                });
+            };
+
+            // Event listener untuk submit form edit user
+            editUserForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                let users = JSON.parse(localStorage.getItem('users')) || [];
+                
+                if (currentEditingUserIndex !== -1) {
+                    users[currentEditingUserIndex].role = editRoleSelect.value;
+                    localStorage.setItem('users', JSON.stringify(users));
+                    alert('Perubahan pengguna berhasil disimpan!');
+                    editUserModal.style.display = 'none'; // Sembunyikan modal
+                    editUserModal.classList.remove('active'); // Hapus class active
+                    renderUsers(); // Render ulang tabel
+                }
+            });
+
+            // Logic untuk menutup modal
+            closeModalButton.addEventListener('click', () => {
+                editUserModal.style.display = 'none';
+                editUserModal.classList.remove('active');
+            });
+
+            editUserModal.addEventListener('click', (e) => {
+                if (e.target === editUserModal) {
+                    editUserModal.style.display = 'none';
+                    editUserModal.classList.remove('active');
+                }
+            });
+
+            renderUsers(); // Render tabel user saat halaman dimuat
+
+            // --- START PERBAIKAN DROPDOWN PROFIL ---
+            const currentUserLoggedIn = getLoggedInUser(); // Nama variabel berbeda agar tidak bentrok
+            if (currentUserLoggedIn) {
+                document.getElementById('loggedInUsername').textContent = currentUserLoggedIn.username + ' (' + currentUserLoggedIn.role + ')';
+                if (currentUserLoggedIn.role === 'admin') {
+                    document.getElementById('navManageUsers').style.display = 'inline-block';
+                }
+            }
+
+            const profileIcon = document.getElementById('profileIcon');
+            const profileDropdown = document.getElementById('profileDropdown');
+
+            if(profileIcon && profileDropdown) { // Pastikan elemen ditemukan
+                profileIcon.addEventListener('click', (event) => {
+                    event.stopPropagation(); // Mencegah klik menyebar ke window dan langsung menutup
+                    profileDropdown.classList.toggle('active');
+                });
+
+                window.addEventListener('click', (event) => {
+                    if (profileDropdown.classList.contains('active') && 
+                        !profileIcon.contains(event.target) && 
+                        !profileDropdown.contains(event.target)) {
+                        profileDropdown.classList.remove('active');
+                    }
+                });
+            }
+            // --- END PERBAIKAN DROPDOWN PROFIL ---
+        });
+    </script>
+</body>
+</html>

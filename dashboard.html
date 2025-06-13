@@ -3,15 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scan Barcode Inventaris</title>
+    <title>Selamat Datang - TVRI Lampung</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="html5-qrcode.min.js"></script> 
-    <script src="auth.js"></script> 
+    <script src="auth.js"></script>
+    <script>
+        const currentUser = getLoggedInUser();
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+    </script>
 </head>
 <body>
     <header class="main-header">
@@ -21,7 +26,7 @@
             </a>
             <nav class="main-nav">
                 <a href="inventory_list.html" class="nav-item">List Inventaris</a>
-                <a href="scan.html" class="nav-item active">Scan QR</a>
+                <a href="scan.html" class="nav-item">Scan QR</a>
                 <a href="manage_users.html" class="nav-item" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
             </nav>
             <div class="user-profile">
@@ -37,31 +42,11 @@
         </div>
     </header>
 
-    <div class="container">
-        <h1>Scan Barcode / QR Code</h1>
-
-        <div class="scan-section">
-            <p>Klik tombol di bawah untuk memulai scan atau unggah gambar barcode/QR.</p>
-            
-            <button id="startScanBtn" class="modern-button">Mulai Scan</button>
-
-            <div id="scannerContainer" style="display: none;">
-                <div id="reader" style="width: 100%;"></div> <div class="upload-section">
-                    <label for="qr-file-input">Pilih Gambar Barcode / QR</label>
-                    <input type="file" id="qr-file-input" accept="image/*">
-                </div>
-            </div>
-
-            <div id="qr-reader-results" class="scan-result-section">
-                <h3>Hasil Scan</h3>
-                <div id="scanned-item-info">
-                    <p>Belum ada barcode yang terdeteksi.</p>
-                </div>
-            </div>
+    <div class="container welcome-container">
+        <h1>Selamat Datang di Beta Web TVRI Lampung</h1>
+        <p class="welcome-message">Sistem inventaris siap membantu Anda mengelola aset kantor.</p>
         </div>
-    </div>
 
-    <script src="scan-script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const currentUser = getLoggedInUser();
@@ -72,13 +57,12 @@
                 }
             }
 
-            // --- START PERBAIKAN DROPDOWN PROFIL ---
             const profileIcon = document.getElementById('profileIcon');
             const profileDropdown = document.getElementById('profileDropdown');
 
-            if(profileIcon && profileDropdown) { // Pastikan elemen ditemukan
+            if(profileIcon && profileDropdown) {
                 profileIcon.addEventListener('click', (event) => {
-                    event.stopPropagation(); // Mencegah klik menyebar ke window dan langsung menutup
+                    event.stopPropagation();
                     profileDropdown.classList.toggle('active');
                 });
 
@@ -90,7 +74,6 @@
                     }
                 });
             }
-            // --- END PERBAIKAN DROPDOWN PROFIL ---
         });
     </script>
 </body>

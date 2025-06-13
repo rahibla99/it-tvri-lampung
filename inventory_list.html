@@ -3,15 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scan Barcode Inventaris</title>
+    <title>List Inventaris - TVRI Lampung</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="html5-qrcode.min.js"></script> 
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+
     <script src="auth.js"></script> 
+    <script>
+        const currentUser = getLoggedInUser();
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+    </script>
 </head>
 <body>
     <header class="main-header">
@@ -20,8 +27,8 @@
                 <div class="app-title">Inventaris TVRI Lampung</div>
             </a>
             <nav class="main-nav">
-                <a href="inventory_list.html" class="nav-item">List Inventaris</a>
-                <a href="scan.html" class="nav-item active">Scan QR</a>
+                <a href="inventory_list.html" class="nav-item active">List Inventaris</a>
+                <a href="scan.html" class="nav-item">Scan QR</a>
                 <a href="manage_users.html" class="nav-item" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
             </nav>
             <div class="user-profile">
@@ -38,30 +45,58 @@
     </header>
 
     <div class="container">
-        <h1>Scan Barcode / QR Code</h1>
+        <h1>Daftar Inventaris Barang Kantor</h1>
 
-        <div class="scan-section">
-            <p>Klik tombol di bawah untuk memulai scan atau unggah gambar barcode/QR.</p>
-            
-            <button id="startScanBtn" class="modern-button">Mulai Scan</button>
-
-            <div id="scannerContainer" style="display: none;">
-                <div id="reader" style="width: 100%;"></div> <div class="upload-section">
-                    <label for="qr-file-input">Pilih Gambar Barcode / QR</label>
-                    <input type="file" id="qr-file-input" accept="image/*">
-                </div>
+        <div id="adminFeatures" style="display: none;">
+            <div class="input-section">
+                <input type="text" id="itemJenis" placeholder="Jenis Barang (Ex: Kamera)" required>
+                <input type="text" id="itemName" placeholder="Nama Barang (Ex: DSLR Canon)" required>
+                <input type="text" id="itemTipe" placeholder="Tipe (Ex: EOS 70D)" required>
+                <input type="number" id="itemQuantity" placeholder="Jumlah" min="0" required>
+                <textarea id="itemKelengkapan" placeholder="Kelengkapan (Ex: Lensa, Baterai, Tripod)"></textarea>
+                <textarea id="itemKondisi" placeholder="Kondisi (Ex: Baik, Rusak Ringan)"></textarea>
+                <textarea id="itemDescription" placeholder="Deskripsi Tambahan (opsional)"></textarea>
+                <button id="submitItemBtn">Tambah Barang</button>
             </div>
+        </div>
 
-            <div id="qr-reader-results" class="scan-result-section">
-                <h3>Hasil Scan</h3>
-                <div id="scanned-item-info">
-                    <p>Belum ada barcode yang terdeteksi.</p>
-                </div>
-            </div>
+        <div class="inventory-controls">
+            <input type="text" id="searchBar" placeholder="Cari Nama/Jenis Barang...">
+            <select id="filterJenis">
+                <option value="">Semua Jenis</option>
+                </select>
+        </div>
+
+        <div class="item-list-section">
+            <h2>Daftar Barang</h2>
+            <table id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Jenis Barang</th>
+                        <th>Nama Barang</th>
+                        <th>Tipe</th>
+                        <th>Jumlah</th>
+                        <th>Kelengkapan</th>
+                        <th>Kondisi</th>
+                        <th>Kode QR</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
         </div>
     </div>
 
-    <script src="scan-script.js"></script>
+    <div id="qrModal" class="qr-modal">
+        <div class="qr-modal-content">
+            <span class="close-button">&times;</span>
+            <div id="modalQrCode" class="modal-qr-code"></div>
+            <p id="modalQrText"></p>
+        </div>
+    </div>
+
+    <script src="inventory_script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const currentUser = getLoggedInUser();
@@ -76,9 +111,9 @@
             const profileIcon = document.getElementById('profileIcon');
             const profileDropdown = document.getElementById('profileDropdown');
 
-            if(profileIcon && profileDropdown) { // Pastikan elemen ditemukan
+            if(profileIcon && profileDropdown) {
                 profileIcon.addEventListener('click', (event) => {
-                    event.stopPropagation(); // Mencegah klik menyebar ke window dan langsung menutup
+                    event.stopPropagation();
                     profileDropdown.classList.toggle('active');
                 });
 
