@@ -28,6 +28,10 @@
                 <a href="inventory_list.html" class="nav-item">List Inventaris</a>
                 <a href="scan.html" class="nav-item">Scan QR</a>
                 <a href="manage_users.html" class="nav-item" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
+                <a href="create_assignment.html" class="nav-item" id="navCreateAssignment" style="display: none;">Input Surat Tugas</a>
+                <a href="borrow_tools.html" class="nav-item" id="navBorrowTools" style="display: none;">Pinjam Alat</a>
+                <a href="global_borrow_history.html" class="nav-item" id="navGlobalBorrowHistory" style="display: none;">Riwayat Peminjaman</a>
+                <a href="list_assignments.html" class="nav-item" id="navListAssignments" style="display: none;">Daftar Tugas</a>
             </nav>
             <div class="user-profile">
                 <div class="profile-icon" id="profileIcon">
@@ -83,16 +87,19 @@
                 document.getElementById('currentUserRole').textContent = currentUser.role;
                 if (currentUser.role === 'admin') {
                     document.getElementById('navManageUsers').style.display = 'inline-block';
+                    document.getElementById('navCreateAssignment').style.display = 'inline-block';
+                    document.getElementById('navGlobalBorrowHistory').style.display = 'inline-block';
+                    document.getElementById('navListAssignments').style.display = 'inline-block'; 
                 }
+                document.getElementById('navBorrowTools').style.display = 'inline-block';
             }
 
-            // --- START PERBAIKAN DROPDOWN PROFIL ---
             const profileIcon = document.getElementById('profileIcon');
             const profileDropdown = document.getElementById('profileDropdown');
 
-            if(profileIcon && profileDropdown) { // Pastikan elemen ditemukan
+            if(profileIcon && profileDropdown) {
                 profileIcon.addEventListener('click', (event) => {
-                    event.stopPropagation(); // Mencegah klik menyebar ke window dan langsung menutup
+                    event.stopPropagation();
                     profileDropdown.classList.toggle('active');
                 });
 
@@ -104,10 +111,8 @@
                     }
                 });
             }
-            // --- END PERBAIKAN DROPDOWN PROFIL ---
 
-            // Setup toggle password visibility for profile page
-            setupPasswordToggles(); // Fungsi ini ada di auth.js
+            setupPasswordToggles();
 
             const profileForm = document.getElementById('profileForm');
             profileForm.addEventListener('submit', (e) => {
@@ -116,31 +121,25 @@
                 const newPassword = document.getElementById('newPassword').value;
                 const confirmNewPassword = document.getElementById('confirmNewPassword').value;
 
-                // --- START PERBAIKAN VALIDASI DAN LOGIKA UPDATE PROFIL ---
-                // Pastikan password baru dan konfirmasi password diisi jika ingin mengubah
                 if (!newPassword || !confirmNewPassword) {
-                    alert('Password baru dan konfirmasi password harus diisi untuk mengubah password!');
+                    showToast('Password baru dan konfirmasi password harus diisi untuk mengubah password!', 'error');
                     return;
                 }
                 
                 if (newPassword !== confirmNewPassword) {
-                    alert('Konfirmasi password baru tidak cocok!');
+                    showToast('Konfirmasi password baru tidak cocok!', 'error');
                     return;
                 }
 
-                // Username baru juga wajib diisi jika ingin mengubahnya
                 if (!newUsername) {
-                    alert('Username baru harus diisi untuk mengubah username!');
+                    showToast('Username baru harus diisi untuk mengubah username!', 'error');
                     return;
                 }
-                // --- END PERBAIKAN VALIDASI ---
 
-                // Panggil fungsi updateProfile dari auth.js
                 const result = updateProfile(currentUser.username, newUsername, newPassword);
 
-                alert(result.message);
+                showToast(result.message, result.success ? 'success' : 'error');
                 if (result.success) {
-                    // Setelah update berhasil, paksa logout
                     logout(); 
                 }
             });

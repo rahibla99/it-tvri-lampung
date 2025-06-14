@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinjam Alat - Inventaris Kantor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="html5-qrcode.min.js"></script> <script src="auth.js"></script>
+    <script>
+        const currentUser = getLoggedInUser();
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+    </script>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-content container">
+            <a href="dashboard.html" class="app-title-link">
+                <div class="app-title">Inventaris TVRI Lampung</div>
+            </a>
+            <nav class="main-nav">
+                <a href="inventory_list.html" class="nav-item">List Inventaris</a>
+                <a href="scan.html" class="nav-item">Scan QR</a>
+                <a href="manage_users.html" class="nav-item" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
+                <a href="create_assignment.html" class="nav-item" id="navCreateAssignment" style="display: none;">Input Surat Tugas</a>
+                <a href="borrow_tools.html" class="nav-item active" id="navBorrowTools" style="display: none;">Pinjam Alat</a>
+                <a href="global_borrow_history.html" class="nav-item" id="navGlobalBorrowHistory" style="display: none;">Riwayat Peminjaman</a>
+                <a href="list_assignments.html" class="nav-item" id="navListAssignments" style="display: none;">Daftar Tugas</a>
+            </nav>
+            <div class="user-profile">
+                <div class="profile-icon" id="profileIcon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-item" id="loggedInUsername"></div>
+                    <a href="profile.html" class="dropdown-item">Pengaturan Akun</a>
+                    <a href="#" class="dropdown-item" onclick="logout()">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Peminjaman dan Pengembalian Alat</h1>
+
+        <div class="section-card">
+            <h2>Surat Tugas Saya</h2>
+            <div id="myAssignmentsList" class="assignments-list">
+                <p class="empty-message" id="noAssignmentsMessage">Tidak ada surat tugas yang melibatkan Anda.</p>
+            </div>
+        </div>
+
+        <div class="section-card" id="borrowReturnSection" style="display: none;">
+            <h2>Peminjaman Alat untuk Surat Tugas: <span id="currentAssignmentTitle"></span></h2>
+            <p>Pilih alat yang ingin Anda pinjam untuk surat tugas ini.</p>
+            
+            <div class="top-scan-button-container">
+                <button id="scanBorrowToolBtn" class="modern-button info-button">Scan QR Alat (Pinjam)</button>
+            </div>
+
+            <div class="inventory-controls">
+                <input type="text" id="borrowSearchBar" placeholder="Cari Nama/Jenis Barang...">
+                <select id="borrowFilterJenis">
+                    <option value="">Semua Jenis</option>
+                    </select>
+            </div>
+            <div id="availableItemsList" class="item-list-section">
+                <table id="availableItemsTable">
+                    <thead>
+                        <tr>
+                            <th>Jenis</th>
+                            <th>Nama Barang</th>
+                            <th>Tipe</th>
+                            <th>Jumlah</th>
+                            <th>Kondisi</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+                <p class="empty-message" id="noAvailableItemsMessage" style="display: none;">Tidak ada alat yang tersedia untuk dipinjam.</p>
+            </div>
+
+            <h2 style="margin-top: 40px;">Alat yang Sedang Dipinjam</h2>
+            <div class="top-scan-button-container">
+                <button id="scanReturnToolBtn" class="modern-button danger-button">Scan QR Alat (Kembalikan)</button>
+            </div>
+
+            <div id="borrowedItemsList" class="item-list-section">
+                <table id="borrowedItemsTable">
+                    <thead>
+                        <tr>
+                            <th>Jenis</th>
+                            <th>Nama Barang</th>
+                            <th>Tipe</th>
+                            <th>Tgl Pinjam</th>
+                            <th>Kondisi Pinjam</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+                <p class="empty-message" id="noBorrowedItemsMessage" style="display: none;">Anda tidak sedang meminjam alat.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmBorrowModal" class="qr-modal">
+        <div class="qr-modal-content">
+            <span class="close-button confirm-close-button">&times;</span>
+            <h2>Konfirmasi Kondisi Peminjaman</h2>
+            <p>Alat: <strong id="confirmItemName"></strong></p>
+            <div class="form-group">
+                <label for="initialCondition">Kondisi Alat Saat Ini (Saat Dipinjam)</label>
+                <textarea id="initialCondition" placeholder="Contoh: Baik, ada goresan kecil"></textarea>
+            </div>
+            <button id="confirmBorrowBtn" class="modern-button auth-button">Konfirmasi Peminjaman</button>
+        </div>
+    </div>
+
+    <div id="confirmReturnModal" class="qr-modal">
+        <div class="qr-modal-content">
+            <span class="close-button confirm-close-button">&times;</span>
+            <h2>Konfirmasi Kondisi Pengembalian</h2>
+            <p>Alat: <strong id="returnItemName"></strong></p>
+            <p>Kondisi Saat Dipinjam: <span id="borrowedConditionSpan"></span></p>
+            <div class="form-group">
+                <label for="returnCondition">Kondisi Alat Saat Dikembalikan</label>
+                <textarea id="returnCondition" placeholder="Contoh: Baik, tidak ada perubahan"></textarea>
+            </div>
+            <button id="confirmReturnBtn" class="modern-button auth-button">Konfirmasi Pengembalian</button>
+        </div>
+    </div>
+
+    <div id="borrowScanModal" class="qr-modal">
+        <div class="qr-modal-content">
+            <span class="close-button scan-close-button">&times;</span>
+            <h2>Scan QR Alat</h2>
+            
+            <div id="scanOptions" class="scan-options-container">
+                <p>Pilih metode scan:</p>
+                <button id="chooseCameraScanBtn" class="modern-button info-button small-button">Scan dengan Kamera</button>
+                <button id="chooseFileScanBtn" class="modern-button secondary-button small-button">Pilih dari Galeri</button>
+            </div>
+
+            <div id="cameraScanArea" style="display: none;">
+                <p>Arahkan kamera ke QR Code alat.</p>
+                <div id="borrowReader" style="width: 100%;"></div> <p id="scanFeedbackCamera" style="color: red; margin-top: 10px;"></p>
+            </div>
+
+            <div id="fileScanArea" style="display: none;">
+                <p>Unggah gambar QR Code alat.</p>
+                <div class="upload-section">
+                    <label for="borrow-qr-file-input">Pilih Gambar QR Alat</label>
+                    <input type="file" id="borrow-qr-file-input" accept="image/*">
+                </div>
+                <p id="scanFeedbackFile" style="color: red; margin-top: 10px;"></p>
+            </div>
+
+            <p id="scanFeedback" style="color: red; margin-top: 10px;"></p> 
+        </div>
+    </div>
+
+
+    <script src="borrow_tools_script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = getLoggedInUser();
+            if (currentUser) {
+                document.getElementById('loggedInUsername').textContent = currentUser.username + ' (' + currentUser.role + ')';
+                if (currentUser.role === 'admin') {
+                    document.getElementById('navManageUsers').style.display = 'inline-block';
+                    document.getElementById('navCreateAssignment').style.display = 'inline-block';
+                    document.getElementById('navGlobalBorrowHistory').style.display = 'inline-block';
+                    document.getElementById('navListAssignments').style.display = 'inline-block'; 
+                }
+                document.getElementById('navBorrowTools').style.display = 'inline-block';
+            }
+
+            const profileIcon = document.getElementById('profileIcon');
+            const profileDropdown = document.getElementById('profileDropdown');
+
+            if(profileIcon && profileDropdown) {
+                profileIcon.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    profileDropdown.classList.toggle('active');
+                });
+
+                window.addEventListener('click', (event) => {
+                    if (profileDropdown.classList.contains('active') && 
+                        !profileIcon.contains(event.target) && 
+                        !event.target.closest('.profile-dropdown')) {
+                        profileDropdown.classList.remove('active');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

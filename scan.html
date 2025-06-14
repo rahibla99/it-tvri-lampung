@@ -23,6 +23,10 @@
                 <a href="inventory_list.html" class="nav-item">List Inventaris</a>
                 <a href="scan.html" class="nav-item active">Scan QR</a>
                 <a href="manage_users.html" class="nav-item" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
+                <a href="create_assignment.html" class="nav-item" id="navCreateAssignment" style="display: none;">Input Surat Tugas</a>
+                <a href="borrow_tools.html" class="nav-item" id="navBorrowTools" style="display: none;">Pinjam Alat</a>
+                <a href="global_borrow_history.html" class="nav-item" id="navGlobalBorrowHistory" style="display: none;">Riwayat Peminjaman</a>
+                <a href="list_assignments.html" class="nav-item" id="navListAssignments" style="display: none;">Daftar Tugas</a>
             </nav>
             <div class="user-profile">
                 <div class="profile-icon" id="profileIcon">
@@ -46,7 +50,9 @@
             <button id="startScanBtn" class="modern-button">Mulai Scan</button>
 
             <div id="scannerContainer" style="display: none;">
-                <div id="reader" style="width: 100%;"></div> <div class="upload-section">
+                <div id="reader" style="width: 100%;"></div>
+
+                <div class="upload-section">
                     <label for="qr-file-input">Pilih Gambar Barcode / QR</label>
                     <input type="file" id="qr-file-input" accept="image/*">
                 </div>
@@ -69,16 +75,19 @@
                 document.getElementById('loggedInUsername').textContent = currentUser.username + ' (' + currentUser.role + ')';
                 if (currentUser.role === 'admin') {
                     document.getElementById('navManageUsers').style.display = 'inline-block';
+                    document.getElementById('navCreateAssignment').style.display = 'inline-block';
+                    document.getElementById('navGlobalBorrowHistory').style.display = 'inline-block';
+                    document.getElementById('navListAssignments').style.display = 'inline-block';
                 }
+                document.getElementById('navBorrowTools').style.display = 'inline-block';
             }
 
-            // --- START PERBAIKAN DROPDOWN PROFIL ---
             const profileIcon = document.getElementById('profileIcon');
             const profileDropdown = document.getElementById('profileDropdown');
 
-            if(profileIcon && profileDropdown) { // Pastikan elemen ditemukan
+            if(profileIcon && profileDropdown) {
                 profileIcon.addEventListener('click', (event) => {
-                    event.stopPropagation(); // Mencegah klik menyebar ke window dan langsung menutup
+                    event.stopPropagation();
                     profileDropdown.classList.toggle('active');
                 });
 
@@ -90,7 +99,6 @@
                     }
                 });
             }
-            // --- END PERBAIKAN DROPDOWN PROFIL ---
         });
     </script>
 </body>

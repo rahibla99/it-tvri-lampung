@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Selamat Datang - TVRI Lampung</title>
+    <title>Input Surat Tugas - Inventaris Kantor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -13,7 +13,8 @@
     <script src="auth.js"></script>
     <script>
         const currentUser = getLoggedInUser();
-        if (!currentUser) {
+        if (!currentUser || currentUser.role !== 'admin') {
+            alert('Akses ditolak! Anda harus login sebagai Admin.');
             window.location.href = 'login.html';
         }
     </script>
@@ -28,7 +29,7 @@
                 <a href="inventory_list.html" class="nav-item">List Inventaris</a>
                 <a href="scan.html" class="nav-item">Scan QR</a>
                 <a href="manage_users.html" class="nav-item" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
-                <a href="create_assignment.html" class="nav-item" id="navCreateAssignment" style="display: none;">Input Surat Tugas</a>
+                <a href="create_assignment.html" class="nav-item active" id="navCreateAssignment" style="display: none;">Input Surat Tugas</a>
                 <a href="borrow_tools.html" class="nav-item" id="navBorrowTools" style="display: none;">Pinjam Alat</a>
                 <a href="global_borrow_history.html" class="nav-item" id="navGlobalBorrowHistory" style="display: none;">Riwayat Peminjaman</a>
                 <a href="list_assignments.html" class="nav-item" id="navListAssignments" style="display: none;">Daftar Tugas</a>
@@ -46,11 +47,37 @@
         </div>
     </header>
 
-    <div class="container welcome-container">
-        <h1>Selamat Datang di Beta Web TVRI Lampung</h1>
-        <p class="welcome-message">Sistem inventaris siap membantu Anda mengelola aset kantor.</p>
+    <div class="container">
+        <h1>Input Surat Tugas Baru</h1>
+
+        <form id="assignmentForm" class="input-section">
+            <div class="form-group-full">
+                <label for="mataAcara">Mata Acara</label>
+                <input type="text" id="mataAcara" placeholder="Contoh: Berita Pagi" required>
+            </div>
+            <div class="form-group-full">
+                <label for="judulAcara">Judul Acara</label>
+                <input type="text" id="judulAcara" placeholder="Contoh: Liputan Banjir Lampung" required>
+            </div>
+            <div class="form-group">
+                <label for="tanggalMulai">Tanggal Mulai</label>
+                <input type="date" id="tanggalMulai" required>
+            </div>
+            <div class="form-group">
+                <label for="tanggalSelesai">Tanggal Selesai</label>
+                <input type="date" id="tanggalSelesai" required>
+            </div>
+            
+            <h3 class="full-width">Crew yang Terlibat</h3>
+            <div id="crewList" class="crew-list full-width">
+                </div>
+            <button type="button" id="addCrewBtn" class="modern-button full-width small-button">Tambah Crew</button>
+
+            <button type="submit" class="modern-button auth-button full-width">Simpan Surat Tugas</button>
+        </form>
     </div>
 
+    <script src="create_assignment_script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const currentUser = getLoggedInUser();
@@ -60,7 +87,7 @@
                     document.getElementById('navManageUsers').style.display = 'inline-block';
                     document.getElementById('navCreateAssignment').style.display = 'inline-block';
                     document.getElementById('navGlobalBorrowHistory').style.display = 'inline-block';
-                    document.getElementById('navListAssignments').style.display = 'inline-block'; 
+                    document.getElementById('navListAssignments').style.display = 'inline-block';
                 }
                 document.getElementById('navBorrowTools').style.display = 'inline-block';
             }

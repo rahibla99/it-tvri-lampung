@@ -30,6 +30,10 @@
                 <a href="inventory_list.html" class="nav-item active">List Inventaris</a>
                 <a href="scan.html" class="nav-item">Scan QR</a>
                 <a href="manage_users.html" class="nav-item" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
+                <a href="create_assignment.html" class="nav-item" id="navCreateAssignment" style="display: none;">Input Surat Tugas</a>
+                <a href="borrow_tools.html" class="nav-item" id="navBorrowTools" style="display: none;">Pinjam Alat</a>
+                <a href="global_borrow_history.html" class="nav-item" id="navGlobalBorrowHistory" style="display: none;">Riwayat Peminjaman</a>
+                <a href="list_assignments.html" class="nav-item" id="navListAssignments" style="display: none;">Daftar Tugas</a>
             </nav>
             <div class="user-profile">
                 <div class="profile-icon" id="profileIcon">
@@ -78,6 +82,7 @@
                         <th>Jumlah</th>
                         <th>Kelengkapan</th>
                         <th>Kondisi</th>
+                        <th>Status</th>
                         <th>Kode QR</th>
                         <th>Aksi</th>
                     </tr>
@@ -96,6 +101,30 @@
         </div>
     </div>
 
+    <div id="historyModal" class="history-modal">
+        <div class="history-modal-content">
+            <span class="close-button history-close-button">&times;</span>
+            <h2>Riwayat Peminjaman <span id="historyItemName"></span></h2>
+            <div id="historyListContent">
+                <table class="history-list-table">
+                    <thead>
+                        <tr>
+                            <th>Peminjam</th>
+                            <th>Tgl Pinjam</th>
+                            <th>Tgl Kembali</th>
+                            <th>Keperluan</th>
+                            <th>Kondisi Pinjam</th>
+                            <th>Kondisi Kembali</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        </tbody>
+                </table>
+                <p id="historyEmptyMessage" class="history-empty-message" style="display: none;">Tidak ada riwayat peminjaman.</p>
+            </div>
+        </div>
+    </div>
+
     <script src="inventory_script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -104,10 +133,13 @@
                 document.getElementById('loggedInUsername').textContent = currentUser.username + ' (' + currentUser.role + ')';
                 if (currentUser.role === 'admin') {
                     document.getElementById('navManageUsers').style.display = 'inline-block';
+                    document.getElementById('navCreateAssignment').style.display = 'inline-block';
+                    document.getElementById('navGlobalBorrowHistory').style.display = 'inline-block';
+                    document.getElementById('navListAssignments').style.display = 'inline-block'; 
                 }
+                document.getElementById('navBorrowTools').style.display = 'inline-block';
             }
 
-            // --- START PERBAIKAN DROPDOWN PROFIL ---
             const profileIcon = document.getElementById('profileIcon');
             const profileDropdown = document.getElementById('profileDropdown');
 
@@ -125,7 +157,6 @@
                     }
                 });
             }
-            // --- END PERBAIKAN DROPDOWN PROFIL ---
         });
     </script>
 </body>

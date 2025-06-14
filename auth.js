@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('loggedInUser', JSON.stringify(user));
                 window.location.href = 'dashboard.html'; // Redirect ke halaman utama
             } else {
-                alert('Username atau password salah!');
+                showToast('Username atau password salah!', 'error'); // Pakai toast
             }
         });
     }
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const confirmPassword = confirmPasswordInput.value;
 
             if (password !== confirmPassword) {
-                alert('Konfirmasi password tidak cocok!');
+                showToast('Konfirmasi password tidak cocok!', 'error'); // Pakai toast
                 return;
             }
 
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Cek apakah username sudah ada
             const existingUser = users.find(u => u.username.toLowerCase() === username.toLowerCase());
             if (existingUser) {
-                alert('Username sudah digunakan! Pilih username lain.');
+                showToast('Username sudah digunakan! Pilih username lain.', 'error'); // Pakai toast
                 return;
             }
 
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 role: "user" 
             });
             localStorage.setItem('users', JSON.stringify(users));
-            alert('Registrasi berhasil! Silakan login.');
+            showToast('Registrasi berhasil! Silakan login.', 'success'); // Pakai toast
             window.location.href = 'login.html'; // Redirect ke halaman login
         });
     }
@@ -111,6 +111,11 @@ function logout() {
 // Fungsi untuk mendapatkan user yang sedang login (termasuk role)
 function getLoggedInUser() {
     return JSON.parse(localStorage.getItem('loggedInUser'));
+}
+
+// Fungsi untuk mendapatkan semua user
+function getAllUsers() {
+    return JSON.parse(localStorage.getItem('users')) || [];
 }
 
 // Fungsi untuk update profil (username/password)
@@ -144,3 +149,38 @@ function updateProfile(oldUsername, newUsername, newPassword) {
     }
     return { success: false, message: 'User tidak ditemukan.' };
 }
+
+// Fungsi untuk menampilkan notifikasi toast (Dipindahkan ke sini agar global)
+function showToast(message, type = 'success') {
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        document.body.appendChild(toastContainer);
+    }
+    
+    const toast = document.createElement('div');
+    toast.classList.add('toast', `toast-${type}`);
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+
+    // Tambahkan toast ke body (atau container spesifik)
+    // Kemudian, hapus setelah beberapa detik
+    setTimeout(() => {
+        toast.classList.add('hide'); // Tambahkan class hide untuk animasi fade-out
+        // Hapus elemen setelah animasi selesai
+        toast.addEventListener('transitionend', () => {
+            toast.remove();
+        });
+    }, 3000); // Durasi tampil: 3 detik
+}
+
+// Event listener untuk memastikan toast container selalu ada di halaman
+document.addEventListener('DOMContentLoaded', () => {
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        document.body.appendChild(toastContainer);
+    }
+});

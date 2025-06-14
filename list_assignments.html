@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Surat Tugas - Inventaris Kantor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="auth.js"></script>
+    <script>
+        const currentUser = getLoggedInUser();
+        // Hanya admin yang bisa mengakses halaman ini
+        if (!currentUser || currentUser.role !== 'admin') {
+            alert('Akses ditolak! Anda harus login sebagai Admin.');
+            window.location.href = 'login.html';
+        }
+    </script>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-content container">
+            <a href="dashboard.html" class="app-title-link">
+                <div class="app-title">Inventaris TVRI Lampung</div>
+            </a>
+            <nav class="main-nav">
+                <a href="inventory_list.html" class="nav-item">List Inventaris</a>
+                <a href="scan.html" class="nav-item">Scan QR</a>
+                <a href="manage_users.html" class="nav-item" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
+                <a href="create_assignment.html" class="nav-item" id="navCreateAssignment" style="display: none;">Input Surat Tugas</a>
+                <a href="borrow_tools.html" class="nav-item" id="navBorrowTools" style="display: none;">Pinjam Alat</a>
+                <a href="global_borrow_history.html" class="nav-item" id="navGlobalBorrowHistory" style="display: none;">Riwayat Peminjaman</a>
+                <a href="list_assignments.html" class="nav-item active" id="navListAssignments" style="display: none;">Daftar Tugas</a>
+            </nav>
+            <div class="user-profile">
+                <div class="profile-icon" id="profileIcon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-item" id="loggedInUsername"></div>
+                    <a href="profile.html" class="dropdown-item">Pengaturan Akun</a>
+                    <a href="#" class="dropdown-item" onclick="logout()">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Daftar Surat Tugas</h1>
+
+        <div class="inventory-controls">
+            <input type="text" id="assignmentSearchBar" placeholder="Cari Mata/Judul Acara...">
+            <select id="assignmentFilterStatus">
+                <option value="">Semua Status</option>
+                <option value="active">Aktif</option>
+                <option value="completed">Selesai</option>
+                <option value="cancelled">Dibatalkan</option>
+            </select>
+        </div>
+
+        <div class="item-list-section">
+            <table id="assignmentsTable" class="history-list-table">
+                <thead>
+                    <tr>
+                        <th>Mata Acara</th>
+                        <th>Judul Acara</th>
+                        <th>Periode</th>
+                        <th>Crew</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="assignmentsTableBody">
+                    </tbody>
+            </table>
+            <p id="noAssignmentsMessage" class="empty-message" style="display: none;">Tidak ada surat tugas.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = getLoggedInUser();
+            if (currentUser) {
+                document.getElementById('loggedInUsername').textContent = currentUser.username + ' (' + currentUser.role + ')';
+                if (currentUser.role === 'admin') {
+                    document.getElementById('navManageUsers').style.display = 'inline-block';
+                    document.getElementById('navCreateAssignment').style.display = 'inline-block';
+                    document.getElementById('navGlobalBorrowHistory').style.display = 'inline-block';
+                    document.getElementById('navListAssignments').style.display = 'inline-block'; 
+                }
+                document.getElementById('navBorrowTools').style.display = 'inline-block';
+            }
+
+            const profileIcon = document.getElementById('profileIcon');
+            const profileDropdown = document.getElementById('profileDropdown');
+
+            if(profileIcon && profileDropdown) {
+                profileIcon.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    profileDropdown.classList.toggle('active');
+                });
+
+                window.addEventListener('click', (event) => {
+                    if (profileDropdown.classList.contains('active') && 
+                        !profileIcon.contains(event.target) && 
+                        !profileDropdown.contains(event.target)) {
+                        profileDropdown.classList.remove('active');
+                    }
+                });
+            }
+
+            // Script untuk halaman ini
+            const assignmentSearchBar = document.getElementById('assignmentSearchBar');
+            const assignmentFilterStatus = document.getElementById('assignmentFilterStatus');
+            const assignmentsTableBody = document.getElementById('assignmentsTableBody');
+            const noAssignmentsMessage = document.getElementById('noAssignmentsMessage');
+
+            let assignments = JSON.parse(localStorage.getItem('assignments')) || [];
+            let inventory = JSON.parse(localStorage.getItem('inventory')) || []; // Perlu untuk cek status borrowed
+
+            const renderAssignments = () => {
+                assignmentsTableBody.innerHTML = '';
+                const searchTerm = assignmentSearchBar.value.toLowerCase();
+                const filterStatus = assignmentFilterStatus.value;
+
+                const filteredAssignments = assignments.filter(assignment => {
+                    const matchesSearch = 
+                        assignment.mataAcara.toLowerCase().includes(searchTerm) ||
+                        assignment.judulAcara.toLowerCase().includes(searchTerm) ||
+                        assignment.crew.some(c => c.username.toLowerCase().includes(searchTerm));
+                    
+                    const matchesStatus = 
+                        filterStatus === '' ||
+                        assignment.status === filterStatus;
+
+                    return matchesSearch && matchesStatus;
+                });
+
+                if (filteredAssignments.length === 0) {
+                    noAssignmentsMessage.style.display = 'block';
+                } else {
+                    noAssignmentsMessage.style.display = 'none';
+                    filteredAssignments.forEach(assignment => {
+                        const row = assignmentsTableBody.insertRow();
+                        row.insertCell().textContent = assignment.mataAcara;
+                        row.insertCell().textContent = assignment.judulAcara;
+                        row.insertCell().textContent = `${assignment.tanggalMulai} s/d ${assignment.tanggalSelesai}`;
+                        row.insertCell().textContent = assignment.crew.map(c => c.username).join(', ');
+                        
+                        const statusCell = row.insertCell();
+                        statusCell.textContent = assignment.status.toUpperCase();
+                        statusCell.classList.add('status-badge', `status-${assignment.status}`); // Tambah class untuk styling status
+
+                        const actionCell = row.insertCell();
+                        actionCell.classList.add('action-buttons');
+
+                        // Tombol Detail
+                        const detailBtn = document.createElement('a');
+                        detailBtn.href = `assignment_detail.html?id=${assignment.id}`;
+                        detailBtn.textContent = 'Detail';
+                        detailBtn.classList.add('modern-button', 'small-button', 'info-button'); // Gunakan info-button
+                        actionCell.appendChild(detailBtn);
+
+                        // Tombol Complete/Cancel hanya jika status aktif dan admin
+                        if (assignment.status === 'active' && currentUser.role === 'admin') {
+                            const completeBtn = document.createElement('button');
+                            completeBtn.textContent = 'Selesai';
+                            completeBtn.classList.add('modern-button', 'small-button', 'update-btn');
+                            completeBtn.onclick = () => {
+                                // Cek apakah ada alat yang masih dipinjam
+                                const itemsBorrowedForThisAssignment = inventory.filter(item => 
+                                    item.borrowHistory && item.borrowHistory.some(history => 
+                                        history.assignmentId === assignment.id && history.endDate === null
+                                    )
+                                );
+                                if (itemsBorrowedForThisAssignment.length > 0) {
+                                    showToast('Tidak bisa menandai selesai! Ada alat yang belum dikembalikan.', 'error');
+                                    return;
+                                }
+
+                                if (confirm(`Yakin tandai surat tugas "${assignment.judulAcara}" sebagai SELESAI?`)) {
+                                    const assignIndex = assignments.findIndex(a => a.id === assignment.id);
+                                    if (assignIndex > -1) {
+                                        assignments[assignIndex].status = 'completed';
+                                        localStorage.setItem('assignments', JSON.stringify(assignments));
+                                        showToast('Surat Tugas berhasil ditandai selesai!', 'success');
+                                        renderAssignments();
+                                    }
+                                }
+                            };
+                            actionCell.appendChild(completeBtn);
+
+                            const cancelBtn = document.createElement('button');
+                            cancelBtn.textContent = 'Batalkan';
+                            cancelBtn.classList.add('modern-button', 'small-button', 'delete-btn');
+                            cancelBtn.onclick = () => {
+                                // Cek apakah ada alat yang masih dipinjam
+                                const itemsBorrowedForThisAssignment = inventory.filter(item => 
+                                    item.borrowHistory && item.borrowHistory.some(history => 
+                                        history.assignmentId === assignment.id && history.endDate === null
+                                    )
+                                );
+                                if (itemsBorrowedForThisAssignment.length > 0) {
+                                    showToast('Tidak bisa membatalkan! Ada alat yang belum dikembalikan.', 'error');
+                                    return;
+                                }
+
+                                if (confirm(`Yakin batalkan surat tugas "${assignment.judulAcara}"?`)) {
+                                    const assignIndex = assignments.findIndex(a => a.id === assignment.id);
+                                    if (assignIndex > -1) {
+                                        assignments[assignIndex].status = 'cancelled';
+                                        localStorage.setItem('assignments', JSON.stringify(assignments));
+                                        showToast('Surat Tugas berhasil dibatalkan!', 'success');
+                                        renderAssignments();
+                                    }
+                                }
+                            };
+                            actionCell.appendChild(cancelBtn);
+                        }
+                    });
+                }
+            };
+
+            assignmentSearchBar.addEventListener('keyup', renderAssignments);
+            assignmentFilterStatus.addEventListener('change', renderAssignments);
+
+            renderAssignments();
+        });
+    </script>
+</body>
+</html>

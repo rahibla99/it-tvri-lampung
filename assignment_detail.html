@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Selamat Datang - TVRI Lampung</title>
+    <title>Detail Surat Tugas - Inventaris Kantor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -13,6 +13,7 @@
     <script src="auth.js"></script>
     <script>
         const currentUser = getLoggedInUser();
+        // Semua user boleh melihat detail surat tugas jika punya link-nya
         if (!currentUser) {
             window.location.href = 'login.html';
         }
@@ -31,7 +32,7 @@
                 <a href="create_assignment.html" class="nav-item" id="navCreateAssignment" style="display: none;">Input Surat Tugas</a>
                 <a href="borrow_tools.html" class="nav-item" id="navBorrowTools" style="display: none;">Pinjam Alat</a>
                 <a href="global_borrow_history.html" class="nav-item" id="navGlobalBorrowHistory" style="display: none;">Riwayat Peminjaman</a>
-                <a href="list_assignments.html" class="nav-item" id="navListAssignments" style="display: none;">Daftar Tugas</a>
+                <a href="list_assignments.html" class="nav-item active" id="navListAssignments" style="display: none;">Daftar Tugas</a>
             </nav>
             <div class="user-profile">
                 <div class="profile-icon" id="profileIcon">
@@ -46,11 +47,47 @@
         </div>
     </header>
 
-    <div class="container welcome-container">
-        <h1>Selamat Datang di Beta Web TVRI Lampung</h1>
-        <p class="welcome-message">Sistem inventaris siap membantu Anda mengelola aset kantor.</p>
+    <div class="container">
+        <h1>Detail Surat Tugas</h1>
+
+        <div class="section-card assignment-detail-card">
+            <h2 id="detailAssignmentTitle"></h2>
+            <p><strong>Mata Acara:</strong> <span id="detailMataAcara"></span></p>
+            <p><strong>Judul Acara:</strong> <span id="detailJudulAcara"></span></p>
+            <p><strong>Tanggal Mulai:</strong> <span id="detailTanggalMulai"></span></p>
+            <p><strong>Tanggal Selesai:</strong> <span id="detailTanggalSelesai"></span></p>
+            <p><strong>Status:</strong> <span id="detailStatus" class="status-badge"></span></p>
+            
+            <h3 style="margin-top: 30px;">Crew yang Terlibat</h3>
+            <ul id="detailCrewList" class="crew-detail-list">
+                </ul>
+
+            <h3 style="margin-top: 30px;">Alat yang Dipinjam untuk Tugas ini</h3>
+            <table id="detailBorrowedItemsTable" class="history-list-table">
+                <thead>
+                    <tr>
+                        <th>Jenis</th>
+                        <th>Nama Barang</th>
+                        <th>Tipe</th>
+                        <th>Tgl Pinjam</th>
+                        <th>Kondisi Pinjam</th>
+                        <th>Tgl Kembali</th>
+                        <th>Kondisi Kembali</th>
+                    </tr>
+                </thead>
+                <tbody id="detailBorrowedItemsTableBody">
+                    </tbody>
+            </table>
+            <p id="noBorrowedItemsDetailMessage" class="empty-message" style="display: none;">Belum ada alat yang dipinjam untuk surat tugas ini.</p>
+
+            <div class="action-buttons-bottom" id="assignmentActions" style="display: none;">
+                <button id="completeAssignmentBtn" class="modern-button update-btn">Tandai Selesai</button>
+                <button id="cancelAssignmentBtn" class="modern-button delete-btn">Batalkan Tugas</button>
+            </div>
+        </div>
     </div>
 
+    <script src="assignment_detail_script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const currentUser = getLoggedInUser();
@@ -60,7 +97,7 @@
                     document.getElementById('navManageUsers').style.display = 'inline-block';
                     document.getElementById('navCreateAssignment').style.display = 'inline-block';
                     document.getElementById('navGlobalBorrowHistory').style.display = 'inline-block';
-                    document.getElementById('navListAssignments').style.display = 'inline-block'; 
+                    document.getElementById('navListAssignments').style.display = 'inline-block';
                 }
                 document.getElementById('navBorrowTools').style.display = 'inline-block';
             }

@@ -10,8 +10,8 @@
     
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="auth.js"></script> <script>
-        // Cek status login dan role. Hanya admin yang boleh akses.
+    <script src="auth.js"></script>
+    <script>
         const currentUser = JSON.parse(localStorage.getItem('loggedInUser'));
         if (!currentUser || currentUser.role !== 'admin') {
             alert('Akses ditolak! Anda harus login sebagai Admin.');
@@ -29,6 +29,10 @@
                 <a href="inventory_list.html" class="nav-item">List Inventaris</a>
                 <a href="scan.html" class="nav-item">Scan QR</a>
                 <a href="manage_users.html" class="nav-item active" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
+                <a href="create_assignment.html" class="nav-item" id="navCreateAssignment" style="display: none;">Input Surat Tugas</a>
+                <a href="borrow_tools.html" class="nav-item" id="navBorrowTools" style="display: none;">Pinjam Alat</a>
+                <a href="global_borrow_history.html" class="nav-item" id="navGlobalBorrowHistory" style="display: none;">Riwayat Peminjaman</a>
+                <a href="list_assignments.html" class="nav-item" id="navListAssignments" style="display: none;">Daftar Tugas</a>
             </nav>
             <div class="user-profile">
                 <div class="profile-icon" id="profileIcon">
@@ -62,13 +66,15 @@
         </div>
     </div>
 
-    <div id="editUserModal" class="qr-modal"> <div class="qr-modal-content">
+    <div id="editUserModal" class="qr-modal">
+        <div class="qr-modal-content">
             <span class="close-button">&times;</span>
             <h2>Edit Pengguna</h2>
             <form id="editUserForm" class="auth-form">
                 <div class="form-group">
                     <label for="editUsername">Username</label>
-                    <input type="text" id="editUsername" readonly> </div>
+                    <input type="text" id="editUsername" readonly>
+                </div>
                 <div class="form-group">
                     <label for="editRole">Role</label>
                     <select id="editRole">
@@ -90,7 +96,7 @@
             const editRoleSelect = document.getElementById('editRole');
             const closeModalButton = editUserModal.querySelector('.close-button');
 
-            let currentEditingUserIndex = -1; // Untuk menyimpan index user yang sedang diedit
+            let currentEditingUserIndex = -1;
 
             const renderUsers = () => {
                 usersTableBody.innerHTML = '';
@@ -102,9 +108,8 @@
                     row.insertCell().textContent = user.role;
 
                     const actionCell = row.insertCell();
-                    actionCell.classList.add('action-buttons'); // Gunakan class yang sudah ada
+                    actionCell.classList.add('action-buttons');
 
-                    // Tombol Edit
                     const editBtn = document.createElement('button');
                     editBtn.textContent = 'Edit';
                     editBtn.classList.add('update-btn');
@@ -112,14 +117,13 @@
                         currentEditingUserIndex = index;
                         editUsernameInput.value = user.username;
                         editRoleSelect.value = user.role;
-                        editUserModal.style.display = 'flex'; // Tampilkan modal
-                        editUserModal.classList.add('active'); // Tambah class active untuk animasi
+                        editUserModal.style.display = 'flex';
+                        editUserModal.classList.add('active');
                     };
                     actionCell.appendChild(editBtn);
 
-                    // Tombol Hapus (Jangan biarkan admin menghapus dirinya sendiri atau admin lain tanpa konfirmasi)
-                    const currentUser = getLoggedInUser(); // Ambil user yang sedang login
-                    if (user.username !== 'admin' && user.username !== currentUser.username) { // Admin default & admin yang login tidak bisa dihapus lewat sini
+                    const currentUser = getLoggedInUser();
+                    if (user.username !== 'admin' && user.username !== currentUser.username) {
                         const deleteBtn = document.createElement('button');
                         deleteBtn.textContent = 'Hapus';
                         deleteBtn.classList.add('delete-btn');
@@ -127,7 +131,7 @@
                             if (confirm(`Yakin ingin menghapus pengguna ${user.username}?`)) {
                                 users.splice(index, 1);
                                 localStorage.setItem('users', JSON.stringify(users));
-                                renderUsers(); // Render ulang tabel
+                                renderUsers();
                             }
                         };
                         actionCell.appendChild(deleteBtn);
@@ -135,7 +139,6 @@
                 });
             };
 
-            // Event listener untuk submit form edit user
             editUserForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 let users = JSON.parse(localStorage.getItem('users')) || [];
@@ -143,14 +146,13 @@
                 if (currentEditingUserIndex !== -1) {
                     users[currentEditingUserIndex].role = editRoleSelect.value;
                     localStorage.setItem('users', JSON.stringify(users));
-                    alert('Perubahan pengguna berhasil disimpan!');
-                    editUserModal.style.display = 'none'; // Sembunyikan modal
-                    editUserModal.classList.remove('active'); // Hapus class active
-                    renderUsers(); // Render ulang tabel
+                    showToast('Perubahan pengguna berhasil disimpan!', 'success');
+                    editUserModal.style.display = 'none';
+                    editUserModal.classList.remove('active');
+                    renderUsers();
                 }
             });
 
-            // Logic untuk menutup modal
             closeModalButton.addEventListener('click', () => {
                 editUserModal.style.display = 'none';
                 editUserModal.classList.remove('active');
@@ -163,23 +165,26 @@
                 }
             });
 
-            renderUsers(); // Render tabel user saat halaman dimuat
+            renderUsers();
 
-            // --- START PERBAIKAN DROPDOWN PROFIL ---
-            const currentUserLoggedIn = getLoggedInUser(); // Nama variabel berbeda agar tidak bentrok
+            const currentUserLoggedIn = getLoggedInUser();
             if (currentUserLoggedIn) {
                 document.getElementById('loggedInUsername').textContent = currentUserLoggedIn.username + ' (' + currentUserLoggedIn.role + ')';
                 if (currentUserLoggedIn.role === 'admin') {
                     document.getElementById('navManageUsers').style.display = 'inline-block';
+                    document.getElementById('navCreateAssignment').style.display = 'inline-block';
+                    document.getElementById('navGlobalBorrowHistory').style.display = 'inline-block';
+                    document.getElementById('navListAssignments').style.display = 'inline-block'; 
                 }
+                document.getElementById('navBorrowTools').style.display = 'inline-block';
             }
 
             const profileIcon = document.getElementById('profileIcon');
             const profileDropdown = document.getElementById('profileDropdown');
 
-            if(profileIcon && profileDropdown) { // Pastikan elemen ditemukan
+            if(profileIcon && profileDropdown) {
                 profileIcon.addEventListener('click', (event) => {
-                    event.stopPropagation(); // Mencegah klik menyebar ke window dan langsung menutup
+                    event.stopPropagation();
                     profileDropdown.classList.toggle('active');
                 });
 
@@ -191,7 +196,6 @@
                     }
                 });
             }
-            // --- END PERBAIKAN DROPDOWN PROFIL ---
         });
     </script>
 </body>

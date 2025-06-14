@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Peminjaman Global - Inventaris Kantor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="auth.js"></script>
+    <script>
+        const currentUser = getLoggedInUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            alert('Akses ditolak! Anda harus login sebagai Admin.');
+            window.location.href = 'login.html';
+        }
+    </script>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-content container">
+            <a href="dashboard.html" class="app-title-link">
+                <div class="app-title">Inventaris TVRI Lampung</div>
+            </a>
+            <nav class="main-nav">
+                <a href="inventory_list.html" class="nav-item">List Inventaris</a>
+                <a href="scan.html" class="nav-item">Scan QR</a>
+                <a href="manage_users.html" class="nav-item" id="navManageUsers" style="display: none;">Kelola Pengguna</a>
+                <a href="create_assignment.html" class="nav-item" id="navCreateAssignment" style="display: none;">Input Surat Tugas</a>
+                <a href="borrow_tools.html" class="nav-item" id="navBorrowTools" style="display: none;">Pinjam Alat</a>
+                <a href="global_borrow_history.html" class="nav-item active" id="navGlobalBorrowHistory" style="display: none;">Riwayat Peminjaman</a>
+                <a href="list_assignments.html" class="nav-item" id="navListAssignments" style="display: none;">Daftar Tugas</a>
+            </nav>
+            <div class="user-profile">
+                <div class="profile-icon" id="profileIcon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div class="dropdown-item" id="loggedInUsername"></div>
+                    <a href="profile.html" class="dropdown-item">Pengaturan Akun</a>
+                    <a href="#" class="dropdown-item" onclick="logout()">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Riwayat Peminjaman Global</h1>
+
+        <div class="inventory-controls">
+            <input type="text" id="historySearchBar" placeholder="Cari Barang/Peminjam...">
+            <select id="historyFilterStatus">
+                <option value="">Semua Status</option>
+                <option value="dipinjam">Sedang Dipinjam</option>
+                <option value="dikembalikan">Sudah Dikembalikan</option>
+            </select>
+        </div>
+
+        <div class="item-list-section">
+            <table id="globalHistoryTable" class="history-list-table">
+                <thead>
+                    <tr>
+                        <th>Nama Barang</th>
+                        <th>Tipe</th>
+                        <th>Peminjam</th>
+                        <th>Surat Tugas</th>
+                        <th>Tgl Pinjam</th>
+                        <th>Tgl Kembali</th>
+                        <th>Kondisi Pinjam</th>
+                        <th>Kondisi Kembali</th>
+                    </tr>
+                </thead>
+                <tbody id="globalHistoryTableBody">
+                    </tbody>
+            </table>
+            <p id="globalHistoryEmptyMessage" class="empty-message" style="display: none;">Tidak ada riwayat peminjaman.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentUser = getLoggedInUser();
+            if (currentUser) {
+                document.getElementById('loggedInUsername').textContent = currentUser.username + ' (' + currentUser.role + ')';
+                if (currentUser.role === 'admin') {
+                    document.getElementById('navManageUsers').style.display = 'inline-block';
+                    document.getElementById('navCreateAssignment').style.display = 'inline-block';
+                    document.getElementById('navGlobalBorrowHistory').style.display = 'inline-block';
+                    document.getElementById('navListAssignments').style.display = 'inline-block';
+                }
+                document.getElementById('navBorrowTools').style.display = 'inline-block';
+            }
+
+            const profileIcon = document.getElementById('profileIcon');
+            const profileDropdown = document.getElementById('profileDropdown');
+
+            if(profileIcon && profileDropdown) {
+                profileIcon.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    profileDropdown.classList.toggle('active');
+                });
+
+                window.addEventListener('click', (event) => {
+                    if (profileDropdown.classList.contains('active') && 
+                        !profileIcon.contains(event.target) && 
+                        !profileDropdown.contains(event.target)) {
+                        profileDropdown.classList.remove('active');
+                    }
+                });
+            }
+
+            const globalHistoryTableBody = document.getElementById('globalHistoryTableBody');
+            const globalHistoryEmptyMessage = document.getElementById('globalHistoryEmptyMessage');
+            const historySearchBar = document.getElementById('historySearchBar');
+            const historyFilterStatus = document.getElementById('historyFilterStatus');
+
+            let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+
+            const renderGlobalHistory = () => {
+                globalHistoryTableBody.innerHTML = '';
+                const searchTerm = historySearchBar.value.toLowerCase();
+                const filterStatus = historyFilterStatus.value;
+
+                let allHistoryRecords = [];
+
+                inventory.forEach(item => {
+                    if (item.borrowHistory) {
+                        item.borrowHistory.forEach(history => {
+                            allHistoryRecords.push({
+                                itemName: item.name,
+                                itemJenis: item.jenis,
+                                itemTipe: item.tipe,
+                                borrower: history.borrower,
+                                assignmentTitle: history.assignmentTitle,
+                                startDate: history.startDate,
+                                endDate: history.endDate,
+                                conditionOnBorrow: history.conditionOnBorrow,
+                                conditionOnReturn: history.conditionOnReturn
+                            });
+                        });
+                    }
+                });
+
+                const filteredHistory = allHistoryRecords.filter(record => {
+                    const matchesSearch = 
+                        record.itemName.toLowerCase().includes(searchTerm) ||
+                        record.borrower.toLowerCase().includes(searchTerm) ||
+                        record.assignmentTitle.toLowerCase().includes(searchTerm);
+                    
+                    const matchesStatus = 
+                        filterStatus === '' ||
+                        (filterStatus === 'dipinjam' && record.endDate === null) ||
+                        (filterStatus === 'dikembalikan' && record.endDate !== null);
+
+                    return matchesSearch && matchesStatus;
+                });
+
+                if (filteredHistory.length === 0) {
+                    globalHistoryEmptyMessage.style.display = 'block';
+                } else {
+                    globalHistoryEmptyMessage.style.display = 'none';
+                    filteredHistory.forEach(record => {
+                        const row = globalHistoryTableBody.insertRow();
+                        row.insertCell().textContent = record.itemName;
+                        row.insertCell().textContent = record.itemTipe;
+                        row.insertCell().textContent = record.borrower;
+                        row.insertCell().textContent = record.assignmentTitle;
+                        row.insertCell().textContent = record.startDate;
+                        row.insertCell().textContent = record.endDate || 'Dipinjam';
+                        row.insertCell().textContent = record.conditionOnBorrow || '-';
+                        row.insertCell().textContent = record.conditionOnReturn || '-';
+                    });
+                }
+            };
+
+            historySearchBar.addEventListener('keyup', renderGlobalHistory);
+            historyFilterStatus.addEventListener('change', renderGlobalHistory);
+
+            renderGlobalHistory();
+        });
+    </script>
+</body>
+</html>

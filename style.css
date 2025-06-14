@@ -15,6 +15,13 @@
     --info-color: #17a2b8; /* Warna baru untuk info */
     --white: #fff;
     --black: #000;
+
+    /* Warna baru untuk status */
+    --status-available-bg: #e6ffe6; /* Hijau muda stabilo */
+    --status-borrowed-bg: #ffe6e6; /* Merah muda stabilo */
+    --status-available-icon: #28a745; /* Centang hijau */
+    --status-borrowed-icon: #dc3545; /* Silang merah */
+    --status-completed-bg: #e0e0e0; /* Gray untuk status completed/cancelled */
 }
 
 body {
@@ -97,7 +104,7 @@ body {
 }
 
 .nav-item {
-    color: var(--primary-color); /* Warna biru untuk teks navigasi */
+    color: var(--primary-color); /* Warna biru untuk teks navigasi default */
     text-decoration: none;
     font-weight: 500;
     padding: 5px 10px;
@@ -112,7 +119,7 @@ body {
 
 .nav-item.active {
     border-bottom-color: var(--secondary-color);
-    color: var(--secondary-color);
+    color: var(--secondary-color); /* Yang aktif tetap tosca/hijau */
     font-weight: 600;
 }
 
@@ -373,9 +380,10 @@ body {
     box-shadow: 0 2px 5px rgba(80, 227, 194, 0.3);
 }
 
+/* Input Section for Inventory and Assignment */
 .input-section {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr; /* Default 2 kolom */
     gap: 15px;
     margin-bottom: 30px;
     padding: 25px;
@@ -384,10 +392,18 @@ body {
     box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.05);
 }
 
+.input-section .form-group { /* Group untuk form di input-section */
+    margin-bottom: 0; /* Hapus margin default form-group */
+}
+.input-section .form-group label {
+    margin-bottom: 5px; /* Sedikit lebih kecil dari auth form */
+}
+
 .input-section input[type="text"],
 .input-section input[type="number"],
 .input-section textarea,
-.input-section select {
+.input-section select,
+.input-section input[type="date"] { /* Tambahkan input date */
     padding: 12px 15px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -400,7 +416,8 @@ body {
 
 .input-section input:focus,
 .input-section textarea:focus,
-.input-section select:focus {
+.input-section select:focus,
+.input-section input[type="date"]:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
     outline: none;
@@ -411,6 +428,53 @@ body {
     min-height: 80px;
     resize: vertical;
 }
+
+/* Full width element within input-section */
+.input-section .full-width {
+    grid-column: 1 / -1;
+}
+
+.input-section h3.full-width {
+    text-align: center;
+    color: var(--primary-dark);
+    margin-top: 20px;
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 1.5em;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+/* Crew list dynamic input */
+.crew-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.crew-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto; /* Username, Position, Button */
+    gap: 10px;
+    align-items: end; /* Tombol sejajar dengan input */
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--white);
+}
+.crew-row .form-group {
+    margin-bottom: 0;
+}
+.crew-row label {
+    font-size: 0.9em;
+    color: var(--dark-gray);
+}
+.small-button { /* For Add/Remove Crew */
+    padding: 8px 15px;
+    font-size: 0.9em;
+    border-radius: 4px;
+}
+
 
 .input-section button {
     grid-column: 1 / -1;
@@ -474,7 +538,7 @@ body {
     margin-top: 40px;
 }
 
-#inventoryTable, #usersTable {
+#inventoryTable, #usersTable, #availableItemsTable, #borrowedItemsTable, #assignmentsTable, #globalHistoryTable, #detailBorrowedItemsTable { /* Tambahkan semua tabel baru */
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
@@ -486,14 +550,22 @@ body {
 }
 
 #inventoryTable th, #inventoryTable td,
-#usersTable th, #usersTable td {
+#usersTable th, #usersTable td,
+#availableItemsTable th, #availableItemsTable td,
+#borrowedItemsTable th, #borrowedItemsTable td,
+#assignmentsTable th, #assignmentsTable td,
+#globalHistoryTable th, #globalHistoryTable td,
+#detailBorrowedItemsTable th, #detailBorrowedItemsTable td { /* Tambahkan semua sel tabel baru */
     border: 1px solid var(--medium-gray);
     padding: 12px 15px;
     text-align: left;
     vertical-align: middle;
 }
 
-#inventoryTable th, #usersTable th {
+#inventoryTable th, #usersTable th,
+#availableItemsTable th, #borrowedItemsTable th,
+#assignmentsTable th, #globalHistoryTable th,
+#detailBorrowedItemsTable th { /* Tambahkan semua header tabel baru */
     background-color: var(--primary-color);
     color: var(--white);
     font-weight: 600;
@@ -502,19 +574,88 @@ body {
     z-index: 10;
 }
 
-#inventoryTable th:first-child, #usersTable th:first-child { border-top-left-radius: 8px; }
-#inventoryTable th:last-child, #usersTable th:last-child { border-top-right-radius: 8px; }
+#inventoryTable th:first-child, #usersTable th:first-child,
+#availableItemsTable th:first-child, #borrowedItemsTable th:first-child,
+#assignmentsTable th:first-child, #globalHistoryTable th:first-child,
+#detailBorrowedItemsTable th:first-child { border-top-left-radius: 8px; }
+#inventoryTable th:last-child, #usersTable th:last-child,
+#availableItemsTable th:last-child, #borrowedItemsTable th:last-child,
+#assignmentsTable th:last-child, #globalHistoryTable th:last-child,
+#detailBorrowedItemsTable th:last-child { border-top-right-radius: 8px; }
 
-#inventoryTable tbody tr:nth-child(even), #usersTable tbody tr:nth-child(even) {
+/* Styling baris berdasarkan status */
+/* PERBAIKAN KRUSIAL: Prioritaskan status background di atas nth-child(even) dan default background */
+#inventoryTable tbody tr td { /* Reset background default untuk semua td di dalam tbody */
+    background-color: var(--white);
+}
+
+#inventoryTable tbody tr:nth-child(even) td { /* Terapkan background light-gray untuk baris genap */
     background-color: var(--light-gray);
 }
 
-#inventoryTable tbody tr:hover, #usersTable tbody tr:hover {
-    background-color: var(--medium-gray);
-    transition: background-color 0.2s ease;
+#inventoryTable tbody tr.status-available td { /* Timpa background untuk status available */
+    background-color: var(--status-available-bg) !important; /* !!! PAKAI !important UNTUK OVERRIDE SEMUA !!! */
+}
+#inventoryTable tbody tr.status-borrowed td { /* Timpa background untuk status borrowed */
+    background-color: var(--status-borrowed-bg) !important; /* !!! PAKAI !important UNTUK OVERRIDE SEMUA !!! */
 }
 
-#inventoryTable td:nth-child(7) { /* Kolom Kode QR */
+
+/* Status icon styling */
+#inventoryTable td.status-cell {
+    text-align: center;
+    font-weight: 600;
+}
+#inventoryTable td.status-cell .fa-check-circle {
+    color: var(--status-available-icon);
+    font-size: 1.3em;
+}
+#inventoryTable td.status-cell .fa-times-circle {
+    color: var(--status-borrowed-icon);
+    font-size: 1.3em;
+}
+
+/* Styling untuk status badge di detail surat tugas */
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 0.9em;
+    color: var(--white);
+    margin-left: 10px;
+}
+.status-badge.status-active {
+    background-color: var(--info-color); /* Biru muda */
+}
+.status-badge.status-completed {
+    background-color: var(--success-color); /* Hijau */
+}
+.status-badge.status-cancelled {
+    background-color: var(--danger-color); /* Merah */
+}
+
+
+#inventoryTable tbody tr:hover td, /* Targetkan TD di dalam TR hover */
+#usersTable tbody tr:hover td,
+#availableItemsTable tbody tr:hover td,
+#borrowedItemsTable tbody tr:hover td,
+#assignmentsTable tbody tr:hover td,
+#globalHistoryTable tbody tr:hover td,
+#detailBorrowedItemsTable tbody tr:hover td {
+    background-color: var(--medium-gray); /* Warna hover untuk semua sel */
+    transition: background-color 0.2s ease;
+    cursor: pointer; /* Menandakan baris bisa diklik untuk riwayat */
+}
+/* Nonaktifkan cursor pointer untuk table heads agar tidak misleading */
+#inventoryTable th, #usersTable th, #availableItemsTable th,
+#borrowedItemsTable th, #assignmentsTable th,
+#globalHistoryTable th, #detailBorrowedItemsTable th {
+    cursor: default;
+}
+
+
+#inventoryTable td:nth-child(8) { /* Kolom Kode QR (Kolom ke-8 setelah Status) */
     width: 100px;
     text-align: center;
     padding: 5px; 
@@ -533,14 +674,18 @@ body {
     margin: 0 auto;
 }
 
-#inventoryTable .action-buttons, #usersTable .action-buttons {
+#inventoryTable .action-buttons, #usersTable .action-buttons,
+#availableItemsTable .action-buttons, #borrowedItemsTable .action-buttons,
+#assignmentsTable .action-buttons, #detailBorrowedItemsTable .action-buttons { /* Tambahkan tabel baru */
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
     justify-content: center;
 }
 
-#inventoryTable button, #usersTable button {
+#inventoryTable button, #usersTable button,
+#availableItemsTable button, #borrowedItemsTable button,
+#assignmentsTable button, #detailBorrowedItemsTable button { /* Tambahkan tombol tabel baru */
     padding: 8px 12px;
     border: none;
     border-radius: 5px;
@@ -571,6 +716,14 @@ body {
     transform: translateY(-1px);
 }
 
+.info-button { /* Gaya untuk tombol detail */
+    background-color: var(--info-color);
+    color: var(--white);
+}
+.info-button:hover {
+    background-color: #138496;
+}
+
 /* Styles for Scan Page */
 .scan-section { /* Existing styles */ }
 #startScanBtn { /* Existing styles */ }
@@ -583,8 +736,8 @@ body {
 .upload-section input[type="file"] { /* Existing styles */ }
 
 
-/* --- Styles for QR Modal Pop-up --- */
-.qr-modal {
+/* --- Styles for Modals (QR & History & Confirm) --- */
+.qr-modal, .history-modal, #confirmBorrowModal, #confirmReturnModal, #borrowScanModal { /* Gabungkan semua modal */
     display: none; /* Hidden by default in CSS */
     position: fixed;
     z-index: 1000; /* Z-index lebih tinggi agar pasti di atas segalanya */
@@ -598,12 +751,13 @@ body {
     align-items: center;
 }
 
-.qr-modal.active { /* Class ini akan ditambahkan oleh JS saat modal aktif */
+.qr-modal.active, .history-modal.active, 
+#confirmBorrowModal.active, #confirmReturnModal.active, #borrowScanModal.active { /* Class ini akan ditambahkan oleh JS saat modal aktif */
     display: flex;
     animation: fadeIn 0.3s forwards;
 }
 
-.qr-modal-content {
+.qr-modal-content, .history-modal-content { /* Gabungkan gaya dasar konten modal */
     background-color: var(--white);
     margin: auto;
     padding: 30px;
@@ -611,10 +765,50 @@ body {
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     position: relative;
     text-align: center;
-    max-width: 380px;
+    max-width: 380px; /* Default untuk QR modal */
     width: 90%;
     animation: slideIn 0.3s forwards;
 }
+
+.history-modal-content {
+    max-width: 700px; /* Lebih lebar untuk riwayat */
+}
+.history-modal-content h2 {
+    color: var(--primary-dark);
+    margin-bottom: 20px;
+}
+
+.history-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+.history-list-table th,
+.history-list-table td {
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 0.9em;
+}
+.history-list-table th {
+    background-color: var(--light-gray);
+    font-weight: 600;
+}
+/* Hapus background nth-child untuk riwayat tabel agar tidak bentrok dengan status row */
+.history-list-table tbody tr:nth-child(even) td {
+    background-color: var(--f8f9fa); /* Ini untuk history table, bukan inventoryTable */
+}
+
+.history-list-table tbody tr:hover td { /* Tambahkan hover umum agar semua baris punya hover yang sama */
+    background-color: var(--medium-gray);
+}
+.history-empty-message {
+    font-style: italic;
+    color: var(--dark-gray);
+    margin-top: 20px;
+    font-size: 1.1em;
+}
+
 
 .qr-modal-content #modalQrCode {
     margin: 20px auto;
@@ -659,6 +853,188 @@ body {
     text-decoration: none;
 }
 
+/* Confirm Borrow/Return Modals */
+#confirmBorrowModal .qr-modal-content,
+#confirmReturnModal .qr-modal-content {
+    max-width: 450px; /* Lebih lebar untuk form konfirmasi */
+    padding: 25px;
+}
+#confirmBorrowModal .qr-modal-content h2,
+#confirmReturnModal .qr-modal-content h2 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+}
+#confirmBorrowModal .qr-modal-content p,
+#confirmReturnModal .qr-modal-content p {
+    margin-bottom: 15px;
+}
+#confirmBorrowModal .qr-modal-content label,
+#confirmReturnModal .qr-modal-content label {
+    text-align: left;
+    margin-bottom: 5px;
+    display: block;
+}
+#confirmBorrowModal .qr-modal-content textarea,
+#confirmReturnModal .qr-modal-content textarea,
+#confirmBorrowModal .qr-modal-content input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* Styles for Toast Notifications */
+#toastContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000; /* Pastikan paling atas */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    background-color: var(--primary-dark);
+    color: var(--white);
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    opacity: 1;
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+    transform: translateX(0);
+    min-width: 250px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.toast.toast-success {
+    background-color: var(--success-color);
+}
+.toast.toast-error {
+    background-color: var(--danger-color);
+}
+.toast.toast-info {
+    background-color: var(--info-color);
+}
+
+.toast.hide {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+
+/* Styles for Borrow Tools Page */
+.section-card {
+    background-color: var(--white);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+.section-card h2 {
+    text-align: left;
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 2em;
+    color: var(--primary-dark);
+}
+.assignments-list .assignment-card {
+    background-color: var(--light-gray);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    text-align: left;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.assignments-list .assignment-card h3 {
+    margin: 0;
+    color: var(--primary-dark);
+    font-size: 1.3em;
+}
+.assignments-list .assignment-card p {
+    margin: 5px 0;
+    font-size: 0.95em;
+    color: var(--dark-gray);
+}
+.assignments-list .assignment-card button {
+    align-self: flex-end; /* Tombol ke kanan bawah */
+}
+.empty-message {
+    text-align: center;
+    color: var(--dark-gray);
+    font-style: italic;
+    margin-top: 20px;
+    font-size: 1.1em;
+}
+#borrowReturnSection {
+    background-color: var(--light-gray); /* Background berbeda untuk section ini */
+}
+
+.top-scan-button-container { /* Gaya untuk container tombol scan di atas tabel */
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Styles for Assignment Detail Page */
+.assignment-detail-card .crew-detail-list {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+    text-align: left;
+}
+.assignment-detail-card .crew-detail-list li {
+    background-color: var(--light-gray);
+    border: 1px solid var(--border-color);
+    padding: 8px 15px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+}
+.assignment-detail-card .action-buttons-bottom {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+
+/* Styles for Scan Options in Modals */
+.scan-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+}
+.scan-options-container button {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 1.1em;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+.scan-options-container button.info-button { /* Untuk Scan dengan Kamera */
+    background-color: var(--primary-color);
+}
+.scan-options-container button.info-button:hover {
+    background-color: var(--primary-dark);
+}
+.scan-options-container button.secondary-button { /* Untuk Pilih dari Galeri */
+    background-color: var(--secondary-color);
+}
+.scan-options-container button.secondary-button:hover {
+    background-color: #3CD0B4;
+}
+
+
 /* Animations */
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -677,7 +1053,8 @@ body {
     .input-section { grid-template-columns: 1fr; }
     #inventoryTable th, #inventoryTable td { padding: 10px; font-size: 0.9em; }
     /* Penyesuaian kolom QR di mobile */
-    #inventoryTable td:nth-child(7) { width: 80px; } 
+    #inventoryTable td:nth-child(7) { width: 80px; } /* Kolom Status */
+    #inventoryTable td:nth-child(8) { width: 80px; } /* Kolom QR */
     #inventoryTable .table-qr-code canvas { width: 60px !important; height: 60px !important; }
     .auth-container { padding: 30px; }
     .auth-container h1 { font-size: 1.8em; }
@@ -690,16 +1067,44 @@ body {
     .profile-dropdown { left: 50%; transform: translateX(-50%); } /* Tengahkan dropdown di mobile */
     .inventory-controls { flex-direction: column; gap: 10px; }
     .inventory-controls input, .inventory-controls select { width: 100%; }
+
+    /* Responsive untuk crew list di input-section */
+    .crew-row {
+        grid-template-columns: 1fr auto; /* Posisi dan tombol di bawah username */
+        grid-template-areas: 
+            "username remove" /* Username di kiri, remove di kanan */
+            "position position"; /* Posisi mengambil seluruh lebar */
+        align-items: center; /* Tengahkan items secara vertikal */
+    }
+    .crew-row .crew-username-group { grid-area: username; margin-bottom: 0; } /* Hilangkan margin bawah */
+    .crew-row .crew-position-group { grid-area: position; margin-top: 5px; margin-bottom: 0; } /* Tambah margin atas */
+    .crew-row .remove-crew-btn { grid-area: remove; justify-self: end; align-self: start; margin-top: 10px; } /* Tempatkan tombol hapus di ujung kanan atas */
+    .crew-row label {
+        margin-bottom: 3px; /* Kurangi margin label di mobile */
+    }
+
+    /* Modals responsive */
+    .qr-modal-content, .history-modal-content {
+        padding: 25px;
+        max-width: 95%; /* Lebih fleksibel di mobile */
+    }
+    .history-modal-content table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap; /* Cegah teks pecah baris di sel */
+    }
 }
 
 @media (max-width: 480px) {
     h1 { font-size: 2em; }
     h2 { font-size: 1.5em; }
     .input-section button { font-size: 1em; }
-    #inventoryTable button, #usersTable button { padding: 6px 10px; font-size: 0.8em; }
+    #inventoryTable button, #usersTable button,
+    #availableItemsTable button, #borrowedItemsTable button,
+    #assignmentsTable button, #detailBorrowedItemsTable button { padding: 6px 10px; font-size: 0.8em; } /* Tambahkan semua tombol tabel */
     .modern-button { padding: 10px 20px; font-size: 0.9em; border-radius: 30px; }
     #startScanBtn { padding: 10px 20px; font-size: 1em; }
-    .qr-modal-content { padding: 20px; }
+    .qr-modal-content, .history-modal-content { padding: 20px; } /* Sesuaikan padding modal */
     .qr-modal-content #modalQrCode { width: 250px; height: 250px; }
     .qr-modal-content #modalQrCode canvas { width: 250px !important; height: 250px !important; }
     .close-button { top: 10px; right: 15px; font-size: 25px; }
@@ -708,4 +1113,17 @@ body {
     .auth-form input, .auth-form select { font-size: 0.9em; }
     .auth-button { padding: 12px; font-size: 1em; }
     .app-title { font-size: 1.5em; }
+
+    /* Perbaikan crew-row di mobile sangat kecil */
+    .crew-row {
+        grid-template-columns: 1fr; /* Jadi satu kolom */
+        grid-template-areas: 
+            "username"
+            "position"
+            "remove";
+    }
+    .crew-row .remove-crew-btn { 
+        justify-self: stretch; /* Tombol jadi full width */
+        margin-top: 10px; 
+    }
 }
